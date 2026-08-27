@@ -1,0 +1,41 @@
+# ---------- 环境变量（禁止提交） ----------
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ---------- Node / Frontend ----------
+node_modules/
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
+
+# ---------- Python / Backend ----------
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+*.egg-info/
+dist/
+build/
+
+# ---------- IDE / OS ----------
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.swp
+
+# ---------- Docker 数据卷（本地挂载目录） ----------
+postgres_data/
+redis_data/
+
+# ---------- 日志 ----------
+*.log
+logs/
