@@ -38,6 +38,11 @@ class Settings(BaseSettings):
     # 宿主 6379 被 VMware vmnat 占用，Docker Redis 映射到 16379
     redis_url: str = "redis://localhost:16379/0"
 
+    # OpenAI 兼容端点（从 OPENAI_BASE_URL / OPENAI_API_KEY / OPENAI_MODEL 或 .env 读取）
+    openai_base_url: str = "https://api.deepseek.com"
+    openai_api_key: str | None = None
+    openai_model: str = "deepseek-v4-flash"
+
 
 @lru_cache
 def get_settings() -> Settings:
