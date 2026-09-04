@@ -1,109 +1,37 @@
-"""Workflow State 类型设计。
+"""Workflow State 定义（供 LangGraph Workflow 使用）。
 
-为 AI Software Engineering Team 的未来 Workflow（LangGraph 编排
-PM → Architect → Coder → QA → Reviewer）定义**共享状态 State**。
+早期为纯 TypedDict 占位设计；现 WorkflowState 字段类型直接使用
+各 Agent 的真实 Pydantic 模型，保证节点间产出数据可实际流转。
 
-本模块只做类型设计（TypedDict），不实现任何 Workflow / Agent 逻辑。
+本模块只定义类型，Workflow 编排见 graph/workflow.py。
 """
 
-from typing import Literal, NotRequired, TypedDict
+from typing import NotRequired, TypedDict
 
-# ---------- 通用类型 ----------
-
-# 团队成员角色（对应 PROJECT_SPEC 中的 Agent 角色）
-AgentRole = Literal["pm", "architect", "coder", "qa", "reviewer"]
-
-# 任务/阶段状态
-TaskStatus = Literal["pending", "running", "done", "failed"]
+from agents.architect_agent import ArchitectureAnalysis
+from agents.coder_agent import PatchPlan
+from agents.retriever_agent import RetrievedChunk
+from agents.reviewer_agent import ReviewResult
+from app.schemas.workflow import TaskPlan
 
 
-class Message(TypedDict):
-    """聊天消息（messages 列表的元素）。"""
+class WorkflowState(TypedDict):
+    """跨 Agent 的共享工作流状态。
 
-    role: Literal["user", "assistant", "agent"]
-    content: str
-    agent: NotRequired[AgentRole]  # 当消息来自某个 Agent 时记录角色
-
-
-# ---------- 各阶段产出结构 ----------
-
-class Task(TypedDict):
-    """任务拆解项（task_plan 的元素）。"""
-
-    id: str
-    title: str
-    description: str
-    owner: AgentRole  # 负责该任务的 Agent
-    status: TaskStatus
-    dependencies: NotRequired[list[str]]  # 依赖的其他任务 id
-
-
-class RetrievedChunk(TypedDict):
-    """RAG 检索到的代码片段（retrieved_chunks 的元素）。"""
-
-    file_path: str
-    symbol_name: str
-    score: float
-    code: str
-    line_range: str
-
-
-class ArchitectureAnalysis(TypedDict):
-    """架构分析产出（architecture_analysis 的内容）。"""
-
-    summary: str
-    components: list[str]
-    risks: NotRequired[list[str]]
-
-
-class PatchPlan(TypedDict):
-    """代码修改计划（patch_plan 的内容）。"""
-
-    summary: str
-    files: list[str]
-    changes: list[str]
-
-
-class ReviewResult(TypedDict):
-    """审查结果（review_result 的内容）。"""
-
-    approved: bool
-    comments: list[str]
-    score: NotRequired[int]
-
-
-class TimelineEvent(TypedDict):
-    """时间线事件（timeline 的元素）。"""
-
-    step: str
-    agent: AgentRole
-    status: TaskStatus
-    message: NotRequired[str]
-
-
-# ---------- 主 State ----------
-
-class State(TypedDict):
-    """整个 Software Engineering Workflow 的共享状态。
-
-    字段随工作流推进逐步填充：
-    - user_request：初始注入的用户需求；
-    - 后续由各阶段节点写入 task_plan / architecture_analysis / …
+    除 user_request 外均由对应节点逐步写入：
+    - PM 写入 task_plan
+    - Architect 写入 architecture_analysis
+    - Retriever 写入 retrieved_chunks
+    - Coder 写入 patch_plan
+    - Reviewer 写入 review_result
+    - 各节点追加 timeline
     """
 
-    # 用户原始需求
     user_request: str
-    # PM 产出的任务拆解清单
-    task_plan: list[Task]
-    # Architect 产出的架构分析
-    architecture_analysis: ArchitectureAnalysis
-    # RAG 检索到的相关代码片段（供 Coder 参考）
-    retrieved_chunks: list[RetrievedChunk]
-    # Coder 产出的代码修改计划（Git Patch 前置）
-    patch_plan: PatchPlan
-    # Reviewer 产出的审查结论
-    review_result: ReviewResult
-    # 各阶段执行时间线
-    timeline: list[TimelineEvent]
-    # 会话消息流（用户 ↔ Agent）
-    messages: list[Message]
+    task_plan: NotRequired[TaskPlan | None]
+    architecture_analysis: NotRequired[ArchitectureAnalysis | None]
+    retrieved_chunks: NotRequired[list[RetrievedChunk]]
+    patch_plan: NotRequired[PatchPlan | None]
+    review_result: NotRequired[ReviewResult | None]
+    timeline: NotRequired[list[str]]
+

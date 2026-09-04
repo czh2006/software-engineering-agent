@@ -13,33 +13,9 @@ import json
 import sys
 
 from openai import OpenAI
-from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
-
-
-class TaskItem(BaseModel):
-    """拆解出的单个任务。"""
-
-    title: str = Field(description="任务标题")
-    description: str = Field(description="任务描述")
-    owner: str = Field(
-        description="负责角色：architect / coder / qa / reviewer 之一"
-    )
-    depends_on: list[str] = Field(
-        default_factory=list,
-        description="依赖的其他任务标题",
-    )
-
-
-class TaskPlan(BaseModel):
-    """PM 产出：需求拆解计划。"""
-
-    goal: str = Field(description="总体目标")
-    priority: str = Field(description="优先级：high / medium / low")
-    tasks: list[TaskItem] = Field(description="任务清单")
-    expected_files: list[str] = Field(description="预期会创建/修改的文件路径")
-
+from app.schemas.workflow import TaskItem, TaskPlan
 
 _SYSTEM_PROMPT: str = """你是软件工程团队的 PM（项目经理）。
 你的职责：把用户需求拆解为清晰、可执行、可测试的任务计划。
