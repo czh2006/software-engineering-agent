@@ -36,6 +36,9 @@ Thumbs.db
 postgres_data/
 redis_data/
 
+# ---------- ChromaDB 向量数据库 ----------
+.chroma/
+
 # ---------- 日志 ----------
 *.log
 logs/

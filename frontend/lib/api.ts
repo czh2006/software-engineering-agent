@@ -55,3 +55,39 @@ export async function sendChat(message: string): Promise<ChatResponse> {
 
     return (await res.json()) as ChatResponse;
 }
+
+/** RAG 检索请求参数。 */
+export interface RagSearchParams {
+    query: string;
+    top_k: number;
+}
+
+/** RAG 检索单条结果（对应后端 SearchResult）。 */
+export interface RagSearchResult {
+    file_path: string;
+    symbol_name: string;
+    score: number;
+    code: string;
+    line_range: string;
+}
+
+const RAG_URL = `${API_URL}/rag`;
+
+/** 调用后端 RAG 语义检索接口。 */
+export async function searchCode(
+    query: string,
+    topK = 5
+): Promise<RagSearchResult[]> {
+    const res = await fetch(`${RAG_URL}/search`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query, top_k: topK } satisfies RagSearchParams),
+    });
+
+    if (!res.ok) {
+        throw new Error(`RAG 检索失败：HTTP ${res.status}`);
+    }
+
+    const data = (await res.json()) as { results: RagSearchResult[] };
+    return data.results;
+}
