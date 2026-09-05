@@ -6,13 +6,27 @@
 本模块只定义类型，Workflow 编排见 graph/workflow.py。
 """
 
-from typing import NotRequired, TypedDict
+from typing import Literal, NotRequired, TypedDict
 
-from agents.architect_agent import ArchitectureAnalysis
+from agents.architect_agent import (
+    ArchitectAction,
+    ArchitectureAnalysis,
+    PlannedToolCall,
+    ToolCallRecord,
+)
 from agents.coder_agent import PatchPlan
 from agents.retriever_agent import RetrievedChunk
 from agents.reviewer_agent import ReviewResult
 from app.schemas.workflow import TaskPlan
+
+
+class TimelineEntry(TypedDict):
+    """时间线条目：记录一次 Node 执行。"""
+
+    agent_name: str  # 节点/Agent 名称（如 "PM"）
+    status: Literal["running", "done", "failed"]  # 执行状态
+    duration: float  # 执行耗时（秒）
+    timestamp: str  # ISO8601 时间戳（UTC）
 
 
 class WorkflowState(TypedDict):
@@ -24,7 +38,7 @@ class WorkflowState(TypedDict):
     - Retriever 写入 retrieved_chunks
     - Coder 写入 patch_plan
     - Reviewer 写入 review_result
-    - 各节点追加 timeline
+    - 各节点向 timeline 追加 TimelineEntry
     """
 
     user_request: str
@@ -33,5 +47,13 @@ class WorkflowState(TypedDict):
     retrieved_chunks: NotRequired[list[RetrievedChunk]]
     patch_plan: NotRequired[PatchPlan | None]
     review_result: NotRequired[ReviewResult | None]
-    timeline: NotRequired[list[str]]
+
+    # Architect Tool Loop 字段（graph/architect_loop.py 读写）
+    tool_calls_made: NotRequired[int]  # 已执行工具次数（上限 8）
+    tool_call: NotRequired[PlannedToolCall | None]  # 最近一次工具调用
+    tool_result: NotRequired[str | None]  # 最近一次工具结果文本（回喂 Architect）
+    tool_log: NotRequired[list[ToolCallRecord]]  # 全部工具调用记录
+    architect_action: NotRequired[ArchitectAction | None]  # 最近一轮 Architect 决策
+
+    timeline: NotRequired[list[TimelineEntry]]
 
